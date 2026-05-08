@@ -156,3 +156,13 @@ HF Hub uploads under `$HUGGINGFACENAME/`:
   (Bytedance, Apache 2.0); our RL training runs inside this trainer.
 - The program verifier is [mathruler](https://github.com/hiyouga/MathRuler).
 - This project builds on [R-Zero](https://github.com/Chengsong-Huang/R-Zero).
+
+## Citation
+If you find Reasoning-Synthesis useful for your research and applications, please cite using this BibTeX:
+```bash
+@article{wei2025learning,
+  title={Learning to pose problems: Reasoning-driven and solver-adaptive data synthesis},
+  author={Wei, Yongxian and Zhao, Yilin and Shen, Li and Chen, Xinrui and Cheng, Runxi and Du, Sinan and Yu, Hao and others},
+  journal={arXiv preprint arXiv:2511.09907},
+  year={2025}
+}
