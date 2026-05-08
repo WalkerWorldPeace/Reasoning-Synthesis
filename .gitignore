@@ -1,0 +1,35 @@
+# Python caches & build artefacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+build/
+dist/
+
+# Secrets
+tokens.json
+.env
+
+# Experiment / run-time artefacts
+wandb/
+None/
+temp_results/
+generated_question/
+
+# Paper-time debug/result dumps that reward functions or eval scripts write
+test.json
+final_results.jsonl
+final_results_history*.jsonl
+*_majority_results.json
+*_score_accuracy_analysis.json
+scores_distribution.png
+
+# Paper figures and PDFs
+*.pdf
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp

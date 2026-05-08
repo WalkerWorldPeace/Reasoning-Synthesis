@@ -1,0 +1,4 @@
+{
+    "huggingface": "YOUR_HF_TOKEN_HERE",
+    "wandb": "YOUR_WANDB_API_KEY_HERE"
+}
