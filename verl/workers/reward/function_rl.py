@@ -149,30 +149,36 @@ class BatchFunctionRewardManagerRL(FunctionRewardManager):
         response_str, ground_truth, historical_scores, images = [], [], [], []
         response_ids = data.batch["responses"]
         response_length = data.batch["response_mask"].sum(dim=-1)
-        
+
+        # Text-only batches (math track) have no `multi_modal_data` key; only the
+        # VL track populates it. Detect once up-front so we don't poke an empty
+        # dict for every example, and so we can route to the correct reward-fn
+        # signature (caller_rl.py vs caller_rl_vl.py).
+        has_mm = "multi_modal_data" in data.non_tensor_batch
+
         for i in range(len(data)):
             valid_response_ids = response_ids[i][: response_length[i]]
             response_str.append(
                 self.tokenizer.decode(valid_response_ids, skip_special_tokens=self.config.skip_special_tokens)
             )
             ground_truth.append(data.non_tensor_batch["ground_truth"][i])
-            
-            mm_data = data.non_tensor_batch["multi_modal_data"][i]
-            image_list = mm_data["image"]
-            first_image = image_list[0]  # PIL.Image 对象
-            # 转换为 base64 字符串
-            from PIL import Image
-            from io import BytesIO
-            import base64
-            
-            if isinstance(first_image, Image.Image):
-                buffered = BytesIO()
-                first_image.save(buffered, format="PNG")
-                img_str = base64.b64encode(buffered.getvalue()).decode()
-                images.append(f"data:image/png;base64,{img_str}")
-            else:
-                images.append(None)
-            
+
+            if has_mm:
+                mm_data = data.non_tensor_batch["multi_modal_data"][i]
+                image_list = mm_data["image"]
+                first_image = image_list[0]  # PIL.Image
+                from PIL import Image
+                from io import BytesIO
+                import base64
+
+                if isinstance(first_image, Image.Image):
+                    buffered = BytesIO()
+                    first_image.save(buffered, format="PNG")
+                    img_str = base64.b64encode(buffered.getvalue()).decode()
+                    images.append(f"data:image/png;base64,{img_str}")
+                else:
+                    images.append(None)
+
             try:
                 score_str = data.non_tensor_batch["score"][i]
                 historical_score = float(score_str) if isinstance(score_str, str) else float(score_str)
@@ -181,8 +187,11 @@ class BatchFunctionRewardManagerRL(FunctionRewardManager):
                 print(f"Error: Failed to parse score at index {i}: {e}")
                 print(f"Score value: {data.non_tensor_batch['score'][i] if i < len(data.non_tensor_batch['score']) else 'Index out of range'}")
                 raise ValueError(f"Invalid score format at index {i}")
-                    
-        scores = self.reward_fn(response_str, ground_truth, images=images, historical_scores=historical_scores)
+
+        if has_mm:
+            scores = self.reward_fn(response_str, ground_truth, images=images, historical_scores=historical_scores)
+        else:
+            scores = self.reward_fn(response_str, ground_truth, historical_scores=historical_scores)
         reward_tensor = torch.zeros_like(data.batch["responses"], dtype=torch.float32)
         reward_metrics = defaultdict(list)
         for i, score in enumerate(scores):

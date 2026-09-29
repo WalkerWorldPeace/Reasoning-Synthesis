@@ -36,8 +36,13 @@ def split_list(lst, n=4):
 os.environ["NO_PROXY"] = "0.0.0.0,127.0.0.1"
 
 def fetch(index,i):
-    # 60 s timeout so a stuck vLLM server fails fast instead of hanging training.
-    response = requests.get(f"http://127.0.0.1:{5000+index}/hello?name={i}", timeout=60)
+    # Per-shard reward batches: rollout_batch_size × rollout.n questions get
+    # split 4 ways across reward servers; each server then samples n=10
+    # candidate answers per question. With max_tokens=4096 on H20, the
+    # observed worst-case is ~20 min per shard. Set timeout = 3600 s (1 hr)
+    # so that legitimately-slow shards don't blow up training, while a truly
+    # stuck server still fails fast at the request layer.
+    response = requests.get(f"http://127.0.0.1:{5000+index}/hello?name={i}", timeout=3600)
     print(response)
     return True
 
